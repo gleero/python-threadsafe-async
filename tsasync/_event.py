@@ -47,7 +47,8 @@ class Event:
         """
         Set the event.
 
-        All tasks waiting for event to be set will be immediately awakened.
+        All tasks waiting for event to be set will be
+        immediately awakened.
         """
         with self._ts_lock:
             self._tmp_state = True
@@ -67,7 +68,8 @@ class Event:
         """
         Clear (unset) the event.
 
-        Tasks awaiting on `wait()` will now block until the `set()` method is called again.
+        Tasks awaiting on `wait()` will now block until
+        the `set()` method is called again.
         """
         with self._ts_lock:
             self._tmp_state = False
@@ -87,7 +89,8 @@ class Event:
         """
         Wait until the event is set.
 
-        If the event is set, return True immediately. Otherwise, block until another task calls `set()`.
+        If the event is set, return True immediately.
+        Otherwise, block until another task calls `set()`.
         """
         inloop = in_loop()
 
@@ -105,7 +108,9 @@ class Event:
 
             # Prevent for waits in different threads
             if self._wait_thread_id != threading.get_ident():
-                raise RuntimeError("Using wait in different threads are not allowed")
+                raise RuntimeError(
+                    "Using wait in different threads are not allowed"
+                )
 
             # Reinit loop if not exists
             if inloop and self._loop is None:

@@ -79,7 +79,9 @@ async def test_channel_between_async_and_many_mixed_senders():
     senders_coro = []
     senders_threads = []
     for x in range(5):
-        senders_coro.append(asyncio.create_task(asender(channel, [1, 2])))
+        senders_coro.append(
+            asyncio.create_task(asender(channel, [1, 2]))
+        )
         t = PropagatingThread(target=ssender, args=(channel, [3, 4]))
         t.start()
         senders_threads.append(t)
@@ -160,9 +162,13 @@ async def test_channel_between_two_coroutines():
 
 def test_channel_between_two_threads():
     channel = Channel[Optional[int]]()
-    sender_thread = PropagatingThread(target=ssender, args=(channel, [1, 2, 3, 4, 5]))
+    sender_thread = PropagatingThread(
+        target=ssender, args=(channel, [1, 2, 3, 4, 5])
+    )
     sender_thread.start()
-    receiver_thread = PropagatingThread(target=sreceiver, args=(channel,))
+    receiver_thread = PropagatingThread(
+        target=sreceiver, args=(channel,)
+    )
     receiver_thread.start()
     sender_thread.join()
     receiver_thread.join()
@@ -172,7 +178,9 @@ def test_channel_between_two_threads():
 def test_channel_between_sync_and_thread_sender():
     channel = Channel[Optional[int]]()
     result = []
-    sender_thread = PropagatingThread(target=ssender, args=(channel, [1, 2, 3, 4, 5]))
+    sender_thread = PropagatingThread(
+        target=ssender, args=(channel, [1, 2, 3, 4, 5])
+    )
     sender_thread.start()
     while True:
         item = channel.receive()
@@ -185,7 +193,9 @@ def test_channel_between_sync_and_thread_sender():
 
 def test_channel_between_sync_and_thread_receiver():
     channel = Channel[Optional[int]]()
-    receiver_thread = PropagatingThread(target=sreceiver, args=(channel,))
+    receiver_thread = PropagatingThread(
+        target=sreceiver, args=(channel,)
+    )
     receiver_thread.start()
     for item in [1, 2, 3, 4, 5]:
         channel.send(item)
@@ -198,7 +208,9 @@ def test_channel_between_sync_and_thread_receiver():
 async def test_channel_between_async_and_thread_sender():
     channel = Channel[Optional[int]]()
     result = []
-    sender_thread = PropagatingThread(target=ssender, args=(channel, [1, 2, 3, 4, 5]))
+    sender_thread = PropagatingThread(
+        target=ssender, args=(channel, [1, 2, 3, 4, 5])
+    )
     sender_thread.start()
     while True:
         item = await channel.receive()
@@ -212,7 +224,9 @@ async def test_channel_between_async_and_thread_sender():
 @pytest.mark.asyncio
 async def test_channel_between_async_and_thread_receiver():
     channel = Channel[Optional[int]]()
-    receiver_thread = PropagatingThread(target=sreceiver, args=(channel,))
+    receiver_thread = PropagatingThread(
+        target=sreceiver, args=(channel,)
+    )
     receiver_thread.start()
     for item in [1, 2, 3, 4, 5]:
         await channel.send(item)
