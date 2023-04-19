@@ -1,5 +1,5 @@
 import asyncio
-from typing import Awaitable, TypeVar
+from typing import Awaitable, TypeVar, Union
 
 
 T = TypeVar("T")
@@ -13,7 +13,7 @@ def in_loop() -> bool:
         return False
 
 
-def wrapret(value: T) -> T | Awaitable[T]:
+def wrapret(value: T) -> Union[T, Awaitable[T]]:
     if in_loop():
         result: asyncio.Future = asyncio.Future()
         result.set_result(value)
