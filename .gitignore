@@ -3,3 +3,8 @@
 .coverage
 .idea
 __pycache__
+.mypy_cache
+build
+dist
+*.egg-info
+*.whl
