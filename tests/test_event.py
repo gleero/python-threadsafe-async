@@ -123,9 +123,7 @@ def test_event_wait_in_other_thread_noloop():
 
     mgm_event = threading.Event()
     event = Event()
-    thread = PropagatingThread(
-        target=wait_event_thread, args=(event, mgm_event)
-    )
+    thread = PropagatingThread(target=wait_event_thread, args=(event, mgm_event))
     thread.start()
     mgm_event.wait()
     mgm_event.clear()
@@ -148,9 +146,7 @@ def test_event_wait_in_other_thread_postloop():
 
     mgm_event = threading.Event()
     event = Event()
-    thread = PropagatingThread(
-        target=wait_event_thread, args=(event, mgm_event)
-    )
+    thread = PropagatingThread(target=wait_event_thread, args=(event, mgm_event))
     thread.start()
     mgm_event.wait()
     mgm_event.clear()
@@ -174,9 +170,7 @@ async def test_event_wait_in_other_thread_loop():
 
     mgm_event = threading.Event()
     event = Event()
-    thread = PropagatingThread(
-        target=wait_event_thread, args=(event, mgm_event)
-    )
+    thread = PropagatingThread(target=wait_event_thread, args=(event, mgm_event))
     thread.start()
     mgm_event.wait()
     mgm_event.clear()

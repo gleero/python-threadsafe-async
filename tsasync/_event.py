@@ -108,9 +108,7 @@ class Event:
 
             # Prevent for waits in different threads
             if self._wait_thread_id != threading.get_ident():
-                raise RuntimeError(
-                    "Using wait in different threads are not allowed"
-                )
+                raise RuntimeError("Using wait in different threads are not allowed")
 
             # Reinit loop if not exists
             if inloop and self._loop is None:
