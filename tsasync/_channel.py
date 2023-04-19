@@ -3,7 +3,7 @@ import threading
 from collections import deque
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Awaitable, Deque, Generic, Union
+from typing import Any, Awaitable, Deque, Generic, Optional, Union
 
 from ._event import Event
 from ._utils import T, in_loop, wrapret
@@ -17,6 +17,7 @@ class ChannelState(Enum):
 class OperationContext:
     event: Event
     value: Any
+    destination: Optional[Event] = None
 
 
 class Channel(Generic[T]):
@@ -53,6 +54,7 @@ class Channel(Generic[T]):
             # Unlock for waiter in needed
             try:
                 event = self._waiters.popleft()
+                ctx.destination = event
                 event.set()
             except IndexError:
                 pass
@@ -74,7 +76,7 @@ class Channel(Generic[T]):
         """
         with self._ts_lock:
             # Queue has pending objects, return it immediately
-            if len(self._queue) > 0:
+            if len(self._queue) > 0 and len(self._waiters) == 0:
                 return wrapret(self._next_item())
 
             # Create event and wait for data
@@ -88,7 +90,7 @@ class Channel(Generic[T]):
         # Get item from the queue
         event.wait()
         with self._ts_lock:
-            return self._next_item()
+            return self._next_item(event)
 
     async def _areceive(self, event: Event) -> T:
         """
@@ -99,12 +101,14 @@ class Channel(Generic[T]):
         if inspect.isawaitable(waiter):
             await waiter
         with self._ts_lock:
-            return self._next_item()
+            return self._next_item(event)
 
-    def _next_item(self) -> T:
+    def _next_item(self, event: Optional[Event] = None) -> T:
         """
         Get next item from the queue
         """
         ctx = self._queue.popleft()
+        if ctx.destination is not None:
+            assert ctx.destination == event, f"{ctx.destination} != {event}"
         ctx.event.set()
         return ctx.value
