@@ -143,6 +143,7 @@ def test_event_wait_in_other_thread_postloop():
         loop = asyncio.new_event_loop()
         loop.run_until_complete(async_wait(e))
         assert e.is_set() is True
+        loop.close()
 
     mgm_event = threading.Event()
     event = Event()
@@ -167,6 +168,7 @@ async def test_event_wait_in_other_thread_loop():
         me.wait()
         loop.run_until_complete(async_wait(e))
         assert e.is_set() is True
+        loop.close()
 
     mgm_event = threading.Event()
     event = Event()
