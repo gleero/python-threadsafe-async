@@ -2,15 +2,10 @@ import inspect
 import threading
 from collections import deque
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, Awaitable, Deque, Generic, Optional, Union
 
 from ._event import Event
 from ._utils import T, in_loop, wrapret
-
-
-class ChannelState(Enum):
-    IDLE = 1
 
 
 @dataclass
@@ -25,6 +20,12 @@ class Channel(Generic[T]):
     _queue: Deque[OperationContext]
     _waiters: Deque[Event]
     _max_size: int
+    _is_closed: bool
+
+    @property
+    def closed(self) -> bool:
+        with self._ts_lock:
+            return self._is_closed
 
     def __init__(self, buffered: int = 0):
         """
@@ -34,6 +35,7 @@ class Channel(Generic[T]):
         self._queue = deque()
         self._waiters = deque()
         self._max_size = buffered
+        self._is_closed = False
 
     def send(self, value: T) -> Union[Awaitable, None]:
         """
@@ -41,9 +43,15 @@ class Channel(Generic[T]):
         This method locks main thread until receive fired.
         :param value: any object
         """
-        ctx = OperationContext(event=Event(), value=value)
+        if value is None:
+            raise ValueError("None is not allowed")
 
         with self._ts_lock:
+            if self._is_closed:
+                raise IOError("Channel is closed")
+
+            ctx = OperationContext(event=Event(), value=value)
+
             # No need to wait because enought buffered slots
             if len(self._queue) < self._max_size:
                 ctx.event.set()
@@ -79,6 +87,9 @@ class Channel(Generic[T]):
             if len(self._queue) > 0 and len(self._waiters) == 0:
                 return wrapret(self._next_item())
 
+            if self._is_closed:
+                return wrapret(None)
+
             # Create event and wait for data
             event = Event()
             self._waiters.append(event)
@@ -89,8 +100,23 @@ class Channel(Generic[T]):
 
         # Get item from the queue
         event.wait()
+        return self._next_item(event)
+
+    def close(self):
+        """
+        Close the channel.
+        All buffered items will be passed.
+        """
         with self._ts_lock:
-            return self._next_item(event)
+            self._is_closed = True
+
+            # Unlock for waiter in needed
+            while len(self._waiters) > 0:
+                try:
+                    event = self._waiters.popleft()
+                    event.set()
+                except IndexError:
+                    pass
 
     async def _areceive(self, event: Event) -> T:
         """
@@ -100,15 +126,17 @@ class Channel(Generic[T]):
         waiter = event.wait()
         if inspect.isawaitable(waiter):
             await waiter
-        with self._ts_lock:
-            return self._next_item(event)
+        return self._next_item(event)
 
     def _next_item(self, event: Optional[Event] = None) -> T:
         """
         Get next item from the queue
         """
-        ctx = self._queue.popleft()
-        if ctx.destination is not None:
-            assert ctx.destination == event, f"{ctx.destination} != {event}"
-        ctx.event.set()
-        return ctx.value
+        with self._ts_lock:
+            if self._is_closed and len(self._queue) == 0:
+                return None
+            ctx = self._queue.popleft()
+            if ctx.destination is not None:
+                assert ctx.destination == event, f"{ctx.destination} != {event}"
+            ctx.event.set()
+            return ctx.value
