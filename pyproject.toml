@@ -1,6 +1,6 @@
 [project]
 name = "threadsafe-async"
-version = "0.1.2"
+version = "0.2.0"
 authors = [
     {name = "Vladimir Perekladov", email = "gleero@gmail.com"},
 ]
