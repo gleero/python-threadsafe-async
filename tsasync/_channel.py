@@ -118,6 +118,10 @@ class Channel(Generic[T]):
                 except IndexError:
                     pass
 
+            # Unlock all senders
+            for item in self._queue:
+                item.event.set()
+
     async def _areceive(self, event: Event) -> T:
         """
         Receive item asynchronly

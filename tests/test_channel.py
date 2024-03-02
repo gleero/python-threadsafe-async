@@ -265,3 +265,13 @@ async def test_channel_close_many_mixed_pending_receive():
     await asyncio.gather(*receivers_coros)
     for t in receivers_threads:
         t.join()
+
+
+@pytest.mark.asyncio
+async def test_channel_close_waiting_async_sender():
+    channel = Channel[Optional[int]]()
+    sender_task = asyncio.create_task(asender(channel, [1, 2], close=False))
+    assert (await channel.receive()) == 1
+    await asyncio.sleep(0.5)
+    channel.close()
+    await sender_task
